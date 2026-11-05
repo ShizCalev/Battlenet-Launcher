@@ -1,68 +1,77 @@
 # Battle.net Steam Overlay Launcher
 
-
-Launcher utility to help start battle.net games with the steam overlay.
-
-Thanks to [dafzor](https://github.com/dafzor) for making the original [bnetlauncher](https://github.com/dafzor/bnetlauncher) years ago. 
-Sadly the original program no longer functions (for me at least), and they no longer maintain nor merge PR's for fixes. 
-Likewise, launchpad, the only other alternative, no longer works either due to dead external dependancies. 
-
-This is a continutation using my previous [rumbleverse-launcher](https://github.com/ShizCalev/rumbleverse-launcher) / [fortnite launcher](https://github.com/ShizCalev/fortnite-launcher) framework as a more reliable 
-/ futureproof method (assuming Blizzard doesn't change Battle.net's launch parameters.)
-
-## Purpose
-
-This application is intended to facilitate the launch of battle.net games from steam with overlay
-with minimal/no interaction with the battle.net client while still being automatically logged in.
-
+Launch Battle.net games through Steam with overlay support.
 
 ## Usage
 
-1. Extract the included exe to any location you want (ex: steam folder)
-2. Add the exe to steam as a non-steam game shortcut
-3. On the shortcut properties add one of the following parameters:
+1. Extract the launcher and add `Battlenet-Launcher.exe` to Steam as a non-Steam game.
+2. Set the shortcut's launch options to a game code below, such as `wowf`.
+3. Close the game and Battle.net, then launch the Steam shortcut.
 
-| game          | launch code                                                  |
-| ------------- | ----------------------------------------------------- |
-|Blizzard Arcade Collection | rtro|
-|Call of Duty HQ| codhq|
-|Call of Duty: Black Ops 4 | codbo4|
-|Call of Duty: Black Ops Cold War | codbocw|
-|Call of Duty: Modern Warfare | codmw2019|
-|Call of Duty: Modern Warfare 2 Campaign Remastered | codmw2cr|
-|Call of Duty: MWII / WZ2.0 | codmw2|
-|Call of Duty: Vanguard | codvg|
-|Crash Bandicoot 4: It's About Time | cb4|
-|Diablo 2: Resurrected | d2r|
-|Diablo 3 | d3|
-|Diablo 3 Public Test Realm | d3ptr|
-|Diablo 4 | d4|
-|Diablo Immortal | di|
-|Hearthstone | hs|
-|Heroes of the Storm | hots|
-|Heroes of the Storm Public Test Realm | hotsptr|
-|Overwatch | ow|
-|Overwatch Public Test Realm | owptr|
-|Starcraft 2 | sc2|
-|Starcraft Remastered | scr|
-|Warcraft 1: Orcs & Humans | w1|
-|Warcraft 1: Remastered | w1r|
-|Warcraft 2: Battle.net Edition | w2|
-|Warcraft 2: Remastered | w2r|
-|Warcraft 3: Reforged | w3|
-|World of Warcraft | wow|
-|World of Warcraft Classic | wowclassic|
-|World of Warcraft Public Test Realm | wowptr|
+The launcher closes Battle.net when the game exits if it started the client.
+An already-running client is left open, but the Steam overlay may not work.
+Use `--keep-client` to leave Battle.net open after playing.
 
+## Game codes
 
-The result should look something like the example below:
+| Game | Launch code |
+| --- | --- |
+| Blizzard Arcade Collection | rtro |
+| Call of Duty HQ | codhq |
+| Call of Duty: Black Ops 4 | codbo4 |
+| Call of Duty: Black Ops Cold War | codbocw |
+| Call of Duty: Modern Warfare | codmw2019 |
+| Call of Duty: Modern Warfare 2 Campaign Remastered | codmw2cr |
+| Call of Duty: MWII / WZ2.0 | codmw2 |
+| Call of Duty: Vanguard | codvg |
+| Crash Bandicoot 4: It's About Time | cb4 |
+| Diablo | d1 |
+| Diablo 2: Resurrected | d2r |
+| Diablo 3 | d3 |
+| Diablo 3 Public Test Realm | d3ptr |
+| Diablo 4 | d4 |
+| Diablo Immortal | di |
+| Hearthstone | hs |
+| Heroes of the Storm | hots |
+| Heroes of the Storm Public Test Realm | hotsptr |
+| Overwatch | ow |
+| Overwatch Public Test Realm | owptr |
+| Starcraft 2 | sc2 |
+| Starcraft Remastered | scr |
+| Warcraft 1: Orcs & Humans | w1 |
+| Warcraft 1: Remastered | w1r |
+| Warcraft 2: Battle.net Edition | w2 |
+| Warcraft 2: Remastered | w2r |
+| Warcraft 3: Reforged | w3 |
+| World of Warcraft | wow |
+| World of Warcraft Forever | wowf |
+| World of Warcraft Classic | wowclassic |
+| World of Warcraft Public Test Realm | wowptr |
 
-`"G:\Steam\Battlenet-Launcher.exe" ow`
+## Options
 
-If your Battle.net isn't installed at the default location, add the full path to Battle.net.exe as a secondary argument;
+```text
+Battlenet-Launcher <game> [Battle.net.exe path] [options]
 
-ie; `"G:\Steam\Battlenet-Launcher.exe" ow "C:/PROGRA~2/Battle.net/Battle.net.exe"`
+--timeout SECONDS  Time allowed for the game to start (default: 180; maximum: 3600)
+--exe NAME_OR_PATH Game executable to monitor
+--product CODE     Battle.net product code to launch
+--keep-client      Leave Battle.net open after the game exits
+--dry-run          Show settings without launching anything
+--help / --list    Show usage and game codes
+```
 
-## World of Warcraft Classic - Season of Discovery
+Battle.net is detected automatically. If it isn't found, specify its path:
 
-Not currently supported, I'm looking into how to fix it. ♥
+```text
+"G:\Steam\Battlenet-Launcher.exe" ow "D:\Battle.net\Battle.net.exe"
+```
+
+## Troubleshooting
+
+- If login or updates take longer than three minutes, add `--timeout 600` to the shortcut's launch options.
+- For multiple installations of the same game, use `--exe` with the full path to the intended game executable.
+- Only one launcher session can run at a time. Close an already-running game before launching it through Steam.
+- Legacy WoW Classic Era / Season of Discovery is not currently supported.
+
+Based on [dafzor's bnetlauncher](https://github.com/dafzor/bnetlauncher) and the rumbleverse-launcher / fortnite-launcher framework.

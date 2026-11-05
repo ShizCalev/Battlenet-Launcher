@@ -1,0 +1,117 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: create-release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  release:
+    runs-on: windows-2025-vs2026
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Extract version from version.h
+        id: version
+        run: |
+          $strHeader = Get-Content Source/version.h -Raw
+          $arrVersion = foreach ($strComponent in @('MAJOR', 'MINOR', 'PATCH', 'CI_BUILD'))
+          {
+              $arrMatches = [regex]::Matches($strHeader, "(?m)^#define\s+VERSION_$strComponent\s+(\d+)\s*$")
+              if ($arrMatches.Count -ne 1)
+              {
+                  throw "Expected one numeric VERSION_$strComponent in Source/version.h."
+              }
+
+              $nComponent = [int]$arrMatches[0].Groups[1].Value
+              if ($nComponent -gt 65535)
+              {
+                  throw 'Version components must fit the Windows version resource (0-65535).'
+              }
+              $nComponent
+          }
+
+          if ($arrVersion[3] -ne 0)
+          {
+              throw 'Set VERSION_CI_BUILD to 0 before creating a release.'
+          }
+
+          $strVersion = $arrVersion[0..2] -join '.'
+          "version=$strVersion" >> $env:GITHUB_OUTPUT
+          "file_version=$($arrVersion -join '.')" >> $env:GITHUB_OUTPUT
+          Write-Host "Release version: $strVersion"
+
+      - name: Reject an existing release or tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $arrTags = git ls-remote --tags origin "refs/tags/$env:RELEASE_VERSION"
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to query remote tags.' }
+          if ($arrTags) { throw 'Tag already exists. Bump Source/version.h first.' }
+
+          $arrReleases = @(gh api "repos/$env:GITHUB_REPOSITORY/releases" --paginate --jq '.[].tag_name')
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to query existing releases.' }
+          if ($arrReleases -contains $env:RELEASE_VERSION)
+          {
+              throw 'Release already exists. Bump Source/version.h first.'
+          }
+
+      - uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '[18.0,19.0)'
+
+      - name: Build and test both release architectures
+        run: |
+          foreach ($strPlatform in @('x64', 'Win32'))
+          {
+              msbuild Battlenet-Launcher.vcxproj /m /t:Rebuild /p:Configuration=Release "/p:Platform=$strPlatform" /v:minimal
+              if ($LASTEXITCODE -ne 0) { throw "Build failed: $strPlatform" }
+
+              ./Tests/run.ps1 -Platform $strPlatform -Configuration Release
+              if ($LASTEXITCODE -ne 0) { throw "Tests failed: $strPlatform" }
+          }
+
+      - name: Package and verify release binaries
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          FILE_VERSION: ${{ steps.version.outputs.file_version }}
+        run: |
+          foreach ($strArchitecture in @('x64', 'x86'))
+          {
+              $strBinary = if ($strArchitecture -eq 'x64') { 'x64/Release/Battlenet-Launcher.exe' } else { 'Release/Battlenet-Launcher.exe' }
+              $stVersion = (Get-Item -LiteralPath $strBinary).VersionInfo
+              if ($stVersion.FileVersion -ne $env:FILE_VERSION -or $stVersion.ProductVersion -ne $env:FILE_VERSION)
+              {
+                  throw "Binary version does not match version.h: $strBinary"
+              }
+
+              $strStage = "dist/$strArchitecture"
+              New-Item -ItemType Directory -Path $strStage | Out-Null
+              Copy-Item -LiteralPath $strBinary, 'README.md', 'LICENSE' -Destination $strStage
+              Compress-Archive -Path "$strStage/*" -DestinationPath "dist/Battlenet-Launcher_$($env:RELEASE_VERSION)_$strArchitecture.zip"
+          }
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $arrAssets = @(Get-ChildItem dist/*.zip | Select-Object -ExpandProperty FullName)
+          if ($arrAssets.Count -ne 2) { throw 'Expected x64 and x86 release archives.' }
+
+          gh release create $env:RELEASE_VERSION @arrAssets --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title $env:RELEASE_VERSION --draft --generate-notes
+          if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed.' }

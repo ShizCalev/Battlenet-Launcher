@@ -1,9 +1,15 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\launcher.cpp" />
+    <ClCompile Include="Source\client_log.cpp" />
+    <ClCompile Include="Tests\launcher_tests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\launcher.h" />
+    <ClInclude Include="Source\client_log.h" />
+    <ClInclude Include="Source\version.h" />
     <ResourceCompile Include="Source\resources.rc" />
   </ItemGroup>
 </Project>
