@@ -91,6 +91,18 @@ void CheckLogReadiness()
 	fnWrite(pathCurrent, strLogin + strReady);
 	Check(stMonitor.Poll() == ClientLogState::Ready, "Handle a truncated log");
 
+	const auto pathReverse = pathRoot / L"Reverse";
+	std::filesystem::create_directories(pathReverse);
+	ClientLogMonitor stReverse(pathReverse);
+	const auto pathReverseLog = pathReverse / L"battle.net-reverse.log";
+	fnWrite(pathReverseLog, strReady);
+	Check(stReverse.Poll() == ClientLogState::WaitingForLogin, "Game initialization is not ready");
+	fnWrite(pathReverseLog, strLogin, true);
+	Check(stReverse.Poll() == ClientLogState::Ready, "Accept game initialization before login");
+	fnWrite(pathReverseLog, "I [GameProvider] {Main} Game provider is no longer initialized and is now reset\n", true);
+	Check(stReverse.Poll() == ClientLogState::WaitingForLogin, "Reset reversed readiness after logout");
+	fnWrite(pathReverseLog, strLogin, true);
+	Check(stReverse.Poll() == ClientLogState::WaitingForGames, "Require fresh initialization after reset");
 	ClientLogMonitor stMissing(pathRoot / L"NewLogs");
 	Check(stMissing.Poll() == ClientLogState::WaitingForLog, "Wait for a missing log directory");
 	std::filesystem::create_directories(pathRoot / L"NewLogs");
