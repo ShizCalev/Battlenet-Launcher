@@ -91,6 +91,13 @@ void CheckLogReadiness()
 	fnWrite(pathCurrent, strLogin + strReady);
 	Check(stMonitor.Poll() == ClientLogState::Ready, "Handle a truncated log");
 
+	const auto pathReordered = pathRoot / L"battle.net-reordered.log";
+	ClientLogMonitor stReordered(pathRoot);
+	fnWrite(pathReordered, strReady);
+	Check(stReordered.Poll() == ClientLogState::WaitingForLogin, "Game initialization alone is not ready");
+	fnWrite(pathReordered, strLogin, true);
+	Check(stReordered.Poll() == ClientLogState::Ready, "Detect readiness when initialization precedes login");
+
 	ClientLogMonitor stMissing(pathRoot / L"NewLogs");
 	Check(stMissing.Poll() == ClientLogState::WaitingForLog, "Wait for a missing log directory");
 	std::filesystem::create_directories(pathRoot / L"NewLogs");
