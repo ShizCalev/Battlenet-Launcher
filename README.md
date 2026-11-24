@@ -74,4 +74,4 @@ Battle.net is detected automatically. If it isn't found, specify its path:
 - Only one launcher session can run at a time. Close an already-running game before launching it through Steam.
 - Legacy WoW Classic Era / Season of Discovery is not currently supported.
 
-Based on [dafzor's bnetlauncher](https://github.com/dafzor/bnetlauncher) and the rumbleverse-launcher / fortnite-launcher framework.
+Originally based on [dafzor's bnetlauncher](https://github.com/dafzor/bnetlauncher).
